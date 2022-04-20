@@ -57,7 +57,13 @@ func Height(h int) Option {
 
 // Offset sets the graphs offset.
 func Offset(o int) Option {
-	return optionFunc(func(c *config) { c.Offset = o })
+	return optionFunc(func(c *config) {
+		if o <= 0 {
+			c.Offset = 3
+		} else {
+			c.Offset = o
+		}
+	})
 }
 
 // Precision sets the graphs precision.

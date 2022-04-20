@@ -7,6 +7,42 @@ import (
 	"strings"
 )
 
+type Graph struct {
+	series   []float64
+	conf     *config
+	min, max float64
+	interval float64
+}
+
+func NewGraph(series []float64) *Graph {
+	return &Graph{
+		series: series,
+	}
+}
+
+func (g *Graph) parseData(options ...Option) {
+	g.conf = configure(config{
+		Offset:    3,
+		Precision: 2,
+	}, options)
+	if g.conf.Width > 0 {
+		g.series = interpolateArray(g.series, g.conf.Width)
+	}
+	g.min, g.max = minMaxFloat64Slice(g.series)
+	g.interval = math.Abs(g.max - g.min)
+	if g.conf.Height <= 0 {
+		g.conf.Height = int(g.interval)
+		if int(g.interval) <= 0 {
+			g.conf.Height = int(g.interval * math.Pow10(int(math.Ceil(-math.Log10(g.interval)))))
+		}
+	}
+
+}
+
+func (g *Graph) build() {
+
+}
+
 // Plot returns ascii graph for a series.
 func Plot(series []float64, options ...Option) string {
 	var logMaximum float64
@@ -23,10 +59,9 @@ func Plot(series []float64, options ...Option) string {
 	interval := math.Abs(maximum - minimum)
 
 	if config.Height <= 0 {
+		config.Height = int(interval)
 		if int(interval) <= 0 {
 			config.Height = int(interval * math.Pow10(int(math.Ceil(-math.Log10(interval)))))
-		} else {
-			config.Height = int(interval)
 		}
 	}
 
@@ -34,11 +69,9 @@ func Plot(series []float64, options ...Option) string {
 		config.Offset = 3
 	}
 
-	var ratio float64
+	ratio := 1.0
 	if interval != 0 {
 		ratio = float64(config.Height) / interval
-	} else {
-		ratio = 1
 	}
 	min2 := round(minimum * ratio)
 	max2 := round(maximum * ratio)
@@ -84,11 +117,9 @@ func Plot(series []float64, options ...Option) string {
 
 	// axis and labels
 	for y := intmin2; y < intmax2+1; y++ {
-		var magnitude float64
+		magnitude := float64(y)
 		if rows > 0 {
 			magnitude = maximum - (float64(y-intmin2) * interval / float64(rows))
-		} else {
-			magnitude = float64(y)
 		}
 
 		label := fmt.Sprintf("%*.*f", maxWidth+1, precision, magnitude)

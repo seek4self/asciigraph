@@ -47,23 +47,21 @@ func round(input float64) float64 {
 	return rounded * sign
 }
 
-func linearInterpolate(before, after, atPoint float64) float64 {
-	return before + (after-before)*atPoint
+// (y-y0)/(x-x0) = (y1-y0)/(x1-x0)
+func linearInterpolate(data []float64, x float64) float64 {
+	x0, x1 := math.Floor(x), math.Ceil(x)
+	y0, y1 := data[int(x0)], data[int(x1)]
+	return y0 + (y1-y0)*(x-x0)
 }
 
 func interpolateArray(data []float64, fitCount int) []float64 {
-
-	var interpolatedData []float64
+	interpolatedData := make([]float64, 0, fitCount)
 
 	springFactor := float64(len(data)-1) / float64(fitCount-1)
 	interpolatedData = append(interpolatedData, data[0])
 
 	for i := 1; i < fitCount-1; i++ {
-		spring := float64(i) * springFactor
-		before := math.Floor(spring)
-		after := math.Ceil(spring)
-		atPoint := spring - before
-		interpolatedData = append(interpolatedData, linearInterpolate(data[int(before)], data[int(after)], atPoint))
+		interpolatedData = append(interpolatedData, linearInterpolate(data, float64(i)*springFactor))
 	}
 	interpolatedData = append(interpolatedData, data[len(data)-1])
 	return interpolatedData
